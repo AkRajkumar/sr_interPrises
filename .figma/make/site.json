@@ -1,0 +1,10 @@
+{
+  "description": "Streamline product orders and bookings with an intuitive web platform designed to simplify scheduling and enhance customer management.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
