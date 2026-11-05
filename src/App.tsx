@@ -109,6 +109,19 @@ function generateOrderId() {
   return "SR" + Date.now().toString().slice(-8).toUpperCase();
 }
 
+const PAYMENT_OPTIONS = [
+  { value: "cod", icon: "💵", label: "Cash on Delivery", sub: "Pay when delivered" },
+  { value: "upi", icon: "UPI", label: "UPI", sub: "PhonePe · Google Pay · BHIM" },
+  { value: "card", icon: "▤", label: "Credit / Debit Card", sub: "Visa · Mastercard · RuPay" },
+  { value: "netbanking", icon: "⌂", label: "Net Banking", sub: "All major Indian banks" },
+  { value: "wallet", icon: "◫", label: "Wallet", sub: "Supported digital wallets" },
+  { value: "whatsapp", icon: "💬", label: "WhatsApp Order", sub: "Confirm your order on WhatsApp" },
+] as const;
+
+function getPaymentLabel(payment: string) {
+  return PAYMENT_OPTIONS.find((option) => option.value === payment)?.label ?? "Cash on Delivery";
+}
+
 /* ─── small reusable bits ─── */
 function WaIcon({ size = 18 }: { size?: number }) {
   return (
@@ -175,6 +188,182 @@ function ContactRow({ icon, label, value, href }: { icon: string; label: string;
   );
 }
 
+type AccountRole = "public" | "owner" | "admin";
+const DEMO_PASSWORD = "SRdemo2026";
+
+function AccountPage({ onBack }: { onBack: () => void }) {
+  const [role, setRole] = useState<AccountRole>("public");
+  const [mode, setMode] = useState<"login" | "register">("login");
+  const [submitted, setSubmitted] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
+  const [accountName, setAccountName] = useState("");
+
+  const selectRole = (nextRole: AccountRole) => {
+    setRole(nextRole);
+    setSubmitted(false);
+  };
+
+  const selectMode = (nextMode: "login" | "register") => {
+    setMode(nextMode);
+    setSubmitted(false);
+  };
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const values = new FormData(event.currentTarget);
+    if (mode === "login") {
+      const email = String(values.get("email") || "");
+      setAccountName(String(values.get("name") || email.split("@")[0] || "Rider"));
+      setSignedIn(true);
+      return;
+    }
+    setSubmitted(true);
+  };
+
+  if (signedIn) {
+    const roleLabels: Record<AccountRole, string> = { public: "Customer", owner: "Owner", admin: "Administrator" };
+    const roleDescriptions: Record<AccountRole, string> = {
+      public: "Your orders and account details, all in one place.",
+      owner: "A snapshot of your store and recent order activity.",
+      admin: "A snapshot of platform activity and account access.",
+    };
+
+    return (
+      <main className="dashboard-page">
+        <header className="dashboard-header">
+          <button type="button" className="dashboard-brand" onClick={onBack}>
+            <img src={brandEmblem} alt="" />
+            <span><strong>SR ENTERPRISES</strong><small>ACCOUNT PORTAL</small></span>
+          </button>
+          <div className="dashboard-header-actions">
+            <span className="dashboard-role">{roleLabels[role]}</span>
+            <button type="button" className="dashboard-store-link" onClick={onBack}>Visit store <span aria-hidden="true">↗</span></button>
+            <button type="button" className="dashboard-logout" onClick={() => { setSignedIn(false); setSubmitted(false); }}>Log out</button>
+          </div>
+        </header>
+
+        <section className="dashboard-content">
+          <div className="dashboard-heading">
+            <div>
+              <span className="section-label">{roleLabels[role]} DASHBOARD</span>
+              <h1>Welcome, {accountName}</h1>
+              <p>{roleDescriptions[role]}</p>
+            </div>
+            <span className="dashboard-preview">PREVIEW DATA</span>
+          </div>
+
+          {role === "public" && (
+            <>
+              <div className="dashboard-stats">
+                <article className="dashboard-stat"><span>Orders placed</span><strong>0</strong><small>Your purchases will appear here</small></article>
+                <article className="dashboard-stat"><span>Saved addresses</span><strong>0</strong><small>Manage delivery details at checkout</small></article>
+                <article className="dashboard-stat"><span>Account type</span><strong>Customer</strong><small>Personal shopping account</small></article>
+              </div>
+              <section className="dashboard-section">
+                <div className="dashboard-section-heading"><div><h2>Your orders</h2><p>Track order status and delivery updates.</p></div><button type="button" className="dashboard-action" onClick={onBack}>Shop products <span aria-hidden="true">→</span></button></div>
+                <div className="dashboard-empty"><span aria-hidden="true">▤</span><strong>No orders yet</strong><p>Your order history will show up here after checkout.</p></div>
+              </section>
+            </>
+          )}
+
+          {role === "owner" && (
+            <>
+              <div className="dashboard-stats">
+                <article className="dashboard-stat"><span>Orders this month</span><strong>36</strong><small>Preview value</small></article>
+                <article className="dashboard-stat"><span>Sales this month</span><strong>₹48,620</strong><small>Preview value</small></article>
+                <article className="dashboard-stat"><span>Products in stock</span><strong>24</strong><small>Preview value</small></article>
+              </div>
+              <section className="dashboard-section">
+                <div className="dashboard-section-heading"><div><h2>Recent orders</h2><p>Review and manage customer orders.</p></div><button type="button" className="dashboard-action" disabled>Manage orders</button></div>
+                <div className="dashboard-table-wrap"><table className="dashboard-table"><thead><tr><th>Order</th><th>Customer</th><th>Date</th><th>Amount</th><th>Status</th></tr></thead><tbody><tr><td>#SR10428</td><td>Arjun Mehta</td><td>Today</td><td>₹1,798</td><td><span className="dashboard-status pending">Pending</span></td></tr><tr><td>#SR10427</td><td>Neha Sharma</td><td>Yesterday</td><td>₹899</td><td><span className="dashboard-status shipped">Shipped</span></td></tr><tr><td>#SR10426</td><td>Dev Patel</td><td>Yesterday</td><td>₹2,697</td><td><span className="dashboard-status delivered">Delivered</span></td></tr></tbody></table></div>
+              </section>
+            </>
+          )}
+
+          {role === "admin" && (
+            <>
+              <div className="dashboard-stats">
+                <article className="dashboard-stat"><span>Active accounts</span><strong>128</strong><small>Preview value</small></article>
+                <article className="dashboard-stat"><span>Access requests</span><strong>3</strong><small>Preview value</small></article>
+                <article className="dashboard-stat"><span>Orders to review</span><strong>12</strong><small>Preview value</small></article>
+              </div>
+              <section className="dashboard-section">
+                <div className="dashboard-section-heading"><div><h2>Access overview</h2><p>Account roles and permissions at a glance.</p></div></div>
+                <div className="dashboard-access-list"><div><span className="dashboard-access-icon">P</span><span><strong>Public customers</strong><small>Browse products and manage personal orders</small></span><b>Customer</b></div><div><span className="dashboard-access-icon owner">O</span><span><strong>Business owners</strong><small>Manage store products and order activity</small></span><b>Approval required</b></div><div><span className="dashboard-access-icon admin">A</span><span><strong>Administrators</strong><small>Manage platform access and oversight</small></span><b>Invite only</b></div></div>
+              </section>
+            </>
+          )}
+
+          <p className="dashboard-disclaimer">This is a front-end preview. Connect authentication and business data services before using this dashboard with real accounts.</p>
+        </section>
+      </main>
+    );
+  }
+
+  return (
+    <main className="account-page">
+      <section className="account-visual" style={{ backgroundImage: `linear-gradient(180deg,rgba(8,9,11,.12),rgba(8,9,11,.92)),url(${PRODUCT.images[0]})` }}>
+        <button type="button" className="account-back" onClick={onBack} aria-label="Back to store">← <span>Back to store</span></button>
+        <div className="account-visual-copy">
+          <img src={brandLogo} alt="SR Enterprise Manufacturing" />
+          <p>BUILT FOR THE LONG RIDE</p>
+          <h1>Better visibility.<br />More confidence.</h1>
+          <span>SR Enterprise Manufacturing</span>
+        </div>
+      </section>
+
+      <section className="account-panel">
+        <div className="account-form-wrap">
+          <button type="button" className="account-mobile-back" onClick={onBack}>← Back to store</button>
+          <span className="section-label">YOUR SR ENTERPRISE ACCOUNT</span>
+          <h2>{mode === "login" ? "Welcome back" : "Create your account"}</h2>
+          <p className="account-intro">{mode === "login" ? "Sign in to continue to your account." : "Choose your account type to get started."}</p>
+
+          <div className="account-role-switch" role="group" aria-label="Account type">
+            {(["public", "owner", "admin"] as AccountRole[]).map((accountRole) => (
+              <button key={accountRole} type="button" className={role === accountRole ? "selected" : ""} onClick={() => selectRole(accountRole)} aria-pressed={role === accountRole}>
+                {accountRole === "public" ? "Public" : accountRole === "owner" ? "Owner" : "Admin"}
+              </button>
+            ))}
+          </div>
+
+          <div className="account-mode-switch" role="tablist" aria-label="Login or register">
+            <button type="button" role="tab" aria-selected={mode === "login"} className={mode === "login" ? "selected" : ""} onClick={() => selectMode("login")}>Log in</button>
+            <button type="button" role="tab" aria-selected={mode === "register"} className={mode === "register" ? "selected" : ""} onClick={() => selectMode("register")}>Register</button>
+          </div>
+
+          {role !== "public" && mode === "register" && (
+            <p className="account-notice">{role === "owner" ? "Owner accounts require business verification." : "Admin accounts are created by the business administrator."} This demo does not create or grant account access.</p>
+          )}
+
+          <form key={`${role}-${mode}`} className="account-form" onSubmit={handleSubmit}>
+            {mode === "register" && (
+              <label>
+                {role === "public" ? "Full name" : role === "owner" ? "Owner name" : "Administrator name"}
+                <input className="input-field" name="name" autoComplete="name" placeholder="Your name" required />
+              </label>
+            )}
+            {mode === "register" && role === "owner" && (
+              <label>Business name<input className="input-field" name="business" autoComplete="organization" placeholder="Your business name" required /></label>
+            )}
+            <label>{role === "public" ? "Email address" : "Work email"}<input className="input-field" name="email" type="email" autoComplete="email" placeholder={mode === "login" ? `${role === "public" ? "customer" : role}@srenterprise.co.in` : "you@example.com"} required /></label>
+            {mode === "register" && role === "public" && (
+              <label>Mobile number<input className="input-field" name="mobile" type="tel" autoComplete="tel" placeholder="+91 00000 00000" required /></label>
+            )}
+            <label>Password<input className="input-field" name="password" type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} placeholder={mode === "login" ? DEMO_PASSWORD : "At least 8 characters"} minLength={8} required /></label>
+            {mode === "register" && <label>Confirm password<input className="input-field" name="confirmPassword" type="password" autoComplete="new-password" placeholder="Enter your password again" minLength={8} required /></label>}
+            {mode === "login" && <button className="account-forgot" type="button" onClick={() => setSubmitted(true)}>Forgot password?</button>}
+            <button className="btn-primary account-submit" type="submit">{mode === "login" ? "LOG IN" : role === "public" ? "CREATE ACCOUNT" : "REQUEST ACCESS"}<span aria-hidden="true">→</span></button>
+          </form>
+
+          {submitted && <p className="account-result" role="status">Registration is a preview only. Connect an account service to create your account or request access.</p>}
+          <p className="account-security">Demo sign-in opens a preview dashboard. No account data is stored or verified.</p>
+        </div>
+      </section>
+    </main>
+  );
+}
+
 /* ─── MAIN ─── */
 export default function App() {
   const [dark, setDark] = useState(true);
@@ -188,6 +377,7 @@ export default function App() {
   const [step, setStep] = useState(1);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [placed, setPlaced] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [orderId] = useState(generateOrderId());
   const [form, setForm] = useState({ name: "", mobile: "", whatsapp: "", address: "", city: "", state: "", pincode: "", payment: "cod" });
 
@@ -240,7 +430,7 @@ export default function App() {
           <Row label="Product" value={PRODUCT.name} />
           <Row label="Quantity" value={`${qty} pair(s)`} />
           <Row label="Total Amount" value={`₹${total.toLocaleString()}`} highlight />
-          <Row label="Payment" value={form.payment === "cod" ? "Cash on Delivery" : form.payment === "online" ? "Online Payment" : "WhatsApp Order"} />
+          <Row label="Payment" value={getPaymentLabel(form.payment)} />
           <Row label="Name" value={form.name || "—"} />
           <Row label="Mobile" value={form.mobile || "—"} />
           <Row label="Address" value={form.address ? `${form.address}, ${form.city}, ${form.state} – ${form.pincode}` : "—"} />
@@ -255,6 +445,10 @@ export default function App() {
         <button onClick={() => { setPlaced(false); setStep(1); }} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text3)", fontSize: 13, textDecoration: "underline" }}>← Back to Home</button>
       </div>
     );
+  }
+
+  if (accountOpen) {
+    return <AccountPage onBack={() => { setAccountOpen(false); window.scrollTo({ top: 0 }); }} />;
   }
 
   /* ─── SHARED HEADER STYLE ─── */
@@ -303,6 +497,11 @@ export default function App() {
               {cartCount > 0 && <span style={{ position: "absolute", top: 2, right: 2, width: 16, height: 16, borderRadius: "50%", background: "var(--accent)", color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{cartCount}</span>}
             </button>
 
+            <button type="button" className="account-trigger" onClick={() => setAccountOpen(true)} aria-label="Log in or register">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/></svg>
+              <span>Account</span>
+            </button>
+
             {/* Desktop Order Now */}
             <button onClick={() => goTo("order")} className="btn-primary hdr-order-btn" style={{ padding: "9px 18px", fontSize: 13 }}>ORDER NOW</button>
 
@@ -320,6 +519,7 @@ export default function App() {
           {navLinks.map(l => (
             <button key={l.id} onClick={() => goTo(l.id)} style={{ display: "block", width: "100%", textAlign: "left", padding: "11px 12px", borderRadius: 10, background: activeNav === l.id ? "var(--card2)" : "none", border: "none", cursor: "pointer", fontSize: 15, fontWeight: 500, color: activeNav === l.id ? "var(--primary)" : "var(--text2)", marginBottom: 2 }}>{l.label}</button>
           ))}
+          <button onClick={() => { setMobileOpen(false); setAccountOpen(true); }} className="account-menu-link">Log in / Register</button>
           <button onClick={() => goTo("order")} className="btn-primary" style={{ width: "100%", marginTop: 10, padding: "13px 0", fontSize: 15 }}>ORDER NOW</button>
         </div>
       </header>
@@ -646,15 +846,22 @@ export default function App() {
           {step === 3 && (
             <div>
               <h3 style={{ fontFamily: "Rajdhani,sans-serif", fontSize: 22, fontWeight: 700, marginBottom: 22 }}>Payment & Review</h3>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 10, marginBottom: 22 }}>
-                {[{ v:"cod",icon:"💵",label:"Cash on Delivery",sub:"Pay when delivered" },{ v:"online",icon:"📱",label:"Online Payment",sub:"UPI / Card / Net Banking" },{ v:"whatsapp",icon:"💬",label:"WhatsApp Order",sub:"Order via WhatsApp" }].map(opt => (
-                  <button key={opt.v} onClick={() => setForm(f=>({...f,payment:opt.v}))} style={{ padding: "16px 10px", borderRadius: 14, textAlign: "left", cursor: "pointer", background: form.payment === opt.v ? (dark ? "rgba(13,148,136,0.12)" : "rgba(13,148,136,0.08)") : "var(--card2)", border: `1px solid ${form.payment===opt.v ? "rgba(13,148,136,0.4)" : "var(--border)"}`, transition: "all 0.18s" }}>
-                    <div style={{ fontSize: 24, marginBottom: 8 }}>{opt.icon}</div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: form.payment===opt.v ? "var(--primary)" : "var(--text)", marginBottom: 3 }}>{opt.label}</div>
-                    <div style={{ fontSize: 11, color: "var(--text3)" }}>{opt.sub}</div>
+              <div className="payment-method-grid" role="group" aria-label="Choose a payment method">
+                {PAYMENT_OPTIONS.map(opt => (
+                  <button type="button" key={opt.value} aria-pressed={form.payment === opt.value} onClick={() => setForm(f=>({...f,payment:opt.value}))} className={`payment-method${form.payment === opt.value ? " selected" : ""}`}>
+                    <span className={`payment-method-icon${opt.value === "upi" ? " text-icon" : ""}`} aria-hidden="true">{opt.icon}</span>
+                    <span className="payment-method-copy"><strong>{opt.label}</strong><small>{opt.sub}</small></span>
+                    <span className="payment-method-check" aria-hidden="true">{form.payment === opt.value ? "✓" : ""}</span>
                   </button>
                 ))}
               </div>
+
+              {["upi", "card", "netbanking", "wallet"].includes(form.payment) && (
+                <div className="payment-gateway-notice" role="status">
+                  <strong>Online checkout is not connected yet.</strong>
+                  <span>{getPaymentLabel(form.payment)} will be available after a secure payment gateway is configured. No payment will be taken in this preview.</span>
+                </div>
+              )}
 
               <div style={{ padding: "18px", borderRadius: 14, background: "var(--card2)", border: "1px solid var(--border)", marginBottom: 22 }}>
                 <div style={{ fontFamily: "Rajdhani,sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 12 }}>Order Summary</div>
@@ -667,7 +874,7 @@ export default function App() {
                   <Row label="Name" value={form.name} />
                   <Row label="Mobile" value={form.mobile} />
                   <Row label="Address" value={`${form.address}, ${form.city}, ${form.state} – ${form.pincode}`} />
-                  <Row label="Payment" value={form.payment==="cod"?"Cash on Delivery":form.payment==="online"?"Online Payment":"WhatsApp Order"} />
+                  <Row label="Payment" value={getPaymentLabel(form.payment)} />
                 </div>
               </div>
 
@@ -677,8 +884,10 @@ export default function App() {
                   <a href={WA_URL} target="_blank" rel="noreferrer" className="btn-wa" style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 0", fontSize: 15, textDecoration: "none" }}>
                     <WaIcon /> ORDER ON WHATSAPP
                   </a>
+                ) : ["upi", "card", "netbanking", "wallet"].includes(form.payment) ? (
+                  <button type="button" disabled className="btn-ghost payment-unavailable">ONLINE PAYMENT UNAVAILABLE</button>
                 ) : (
-                  <button onClick={placeOrder} className="btn-primary" style={{ flex: 1, padding: "12px 0", fontSize: 15 }}>PLACE ORDER — ₹{total.toLocaleString()}</button>
+                  <button onClick={placeOrder} className="btn-primary" style={{ flex: 1, padding: "12px 0", fontSize: 15 }}>PLACE COD ORDER — ₹{total.toLocaleString()}</button>
                 )}
               </div>
             </div>
